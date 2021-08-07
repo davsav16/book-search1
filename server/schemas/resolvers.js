@@ -1,28 +1,27 @@
 const { AuthenticationError } = require('apollo-server-express');
-const { deleteBook } = require('../controllers/user-controller');
 const { User, Book } = require('../models');
 const { signToken } = require('../utils/auth');
 
 const resolvers = {
     Query: {
-        me: async (parent, args, context) => {
+        me: async(parent, args, context) => {
             if (context.user) {
-                const userData = await user.findOne({ _id: context.user._id })
-                    .select('-__v -password');
-                return userData;
+                const userData = await User.findOne({ _id: context.user._id})
+                    .select('-__v, -password');
+                return userData
             }
+
             throw new AuthenticationError('Not logged in');
         },
         users: async () => {
             return User.find()
-            .select('-__v -password')
+                .select('-__v -password')
         },
         user: async (parent, { username }) => {
             return User.findOne({ username })
-              .select('-__v -password')
-        },
+                .select('-__v -password')
+        }
     },
-
     Mutation: {
         addUser: async (parent, args) => {
             const user = await User.create(args);
@@ -33,7 +32,7 @@ const resolvers = {
         login: async (parent, { email, password }) => {
             const user = await User.findOne({ email });
 
-            if (!user) {
+            if(!user) {
                 throw new AuthenticationError('Incorrect credentials');
             }
 
@@ -46,16 +45,18 @@ const resolvers = {
             const token = signToken(user);
             return { token, user };
         },
+        // save a book to the savedBooks array on a user
         saveBook: async (parent, { bookId, authors, title, description, image, link }, context) => {
             if(context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id},
                     { $push: { savedBooks: { bookId, authors, title, description, image, link } } },
-                    { new: true, runValidators: true }
+                    { new: true, runValidators: true}
                 )
 
                 return updatedUser
             }
+
             throw new AuthenticationError('You need to be logged in!');
         },
         deleteBook: async(parent, { bookId }, context) => {
@@ -63,13 +64,15 @@ const resolvers = {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
                     { $pull: {savedBooks: { bookId } } },
-                    { new: true }
+                    { new: true } 
                 )
                 return updatedUser
             }
-            throw new AuthenticationError('You need to be logged in');
+            throw new AuthenticationError('You need to be logged in!');
         }
     }
 }
+
+
 
 module.exports = resolvers;
