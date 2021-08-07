@@ -1,4 +1,5 @@
 const { AuthenticationError } = require('apollo-server-express');
+const { deleteBook } = require('../controllers/user-controller');
 const { User, Book } = require('../models');
 const { signToken } = require('../utils/auth');
 
@@ -7,9 +8,7 @@ const resolvers = {
         me: async (parent, args, context) => {
             if (context.user) {
                 const userData = await user.findOne({ _id: context.user._id })
-                    .select('-__v -password')
-                    .populate('books');
-
+                    .select('-__v -password');
                 return userData;
             }
             throw new AuthenticationError('Not logged in');
@@ -17,12 +16,10 @@ const resolvers = {
         users: async () => {
             return User.find()
             .select('-__v -password')
-            .populate('books');
         },
         user: async (parent, { username }) => {
             return User.findOne({ username })
               .select('-__v -password')
-              .populate('books');
         },
     },
 
@@ -61,7 +58,7 @@ const resolvers = {
             }
             throw new AuthenticationError('You need to be logged in!');
         },
-        removeBook: async(parent, { bookId }, context) => {
+        deleteBook: async(parent, { bookId }, context) => {
             if(context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
